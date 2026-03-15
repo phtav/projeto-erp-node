@@ -14,82 +14,48 @@ password: process.env.DB_PASS,
 port: process.env.DB_PORT,
 });
 
-app.get('/', (req, res) => {
- res.send('API do ERP rodando com sucesso!');
+app.post('/produtos', async(req, res) => {
+
+	const { nome, preco, estoque, id_fornecedor } = req.body;
+
+	try {
+		const sql = `INSERT INTO produtos (nome, preco, estoque, id_fornecedor)
+		VALUES ($1, $2, $3, $4) RETURNING *;`
+		const valores = [nome, preco, estoque, id_fornecedor];
+		const resp = await pool.query(sql, valores);
+
+		console.log('Sucesso no banco!', resp.rows[0]);
+		
+		res.status(201).json({
+			mensagem: 'Produto salvo no PostgreSQL com sucesso!',
+			produto: resp.rows[0]
+		});
+
+	} catch(erro) {
+		console.log("Erro ao salvar no banco:", erro.message);
+		res.status(500).json({
+			erro: 'Erro ao salvar no banco',
+			detalhes: erro.message
+		})
+	}
+})
+
+app.get('/produtos', async(req, res) => {
+
+try {
+	const sql = 'SELECT * FROM produtos ORDER BY id_produto ASC;';
+	const resp = await pool.query(sql);
+	res.status(200).json(resp.rows);
+	console.log(`Consulta realizada: ${resp.rowCount} produtos encontrados.`);
+} catch (erro) {
+	console.error("Erro ao buscar no banco de dados:", erro.message);
+	res.status(500).json({
+	erro: 'Erro ao buscar produtos no banco de dados',
+	detalhes: erro.message
 });
-
-let produtos = [];
-
-
-app.post('/produtos', (req, res) => {
- const {nome, preco, estoque} = req.body;
-
- const novoProduto = {
- id: produtos.length + 1,
- nome,
- preco,
- estoque
-};
-
-produtos.push(novoProduto);
-console.log('Produto cadastrado:', novoProduto);
-
-res.status(201).json({
- mensagem: 'Produto cadastrado com sucesso!',
- produto: novoProduto
- });
-});
-
-app.get('/produtos', (req, res) => {
- res.json(produtos);
+}
 });
 
 app.listen(port, () => {
- console.log(`Servidor rodando em http://localhost:${port}`);
+  console.log(`Servidor rodando em http://localhost:${port}`);
 });
-
-/*async function inserirFornecedor(razao_social, CNPJ, email) {
-try {
-	const sql = "INSERT INTO fornecedores (razao_social, CNPJ, email) VALUES ($1, $2, $3) RETURNING *";
-	const valores = [razao_social, CNPJ, email];
-	const resultado = await pool.query(sql, valores);
-
-	console.log("Fornecedor cadastrado com ID:",resultado.rows[0].id_fornecedor);
-} catch (erro) {
-	console.error("Erro no banco: ", erro.message);
-}
-}
-
-async function inserirProdutos(nome, preco, estoque, id_fornecedor) {
-try {
-	const sql = 'INSERT INTO produtos (nome, preco, estoque, id_fornecedor) VALUES ($1, $2, $3, $4) RETURNING *';
-	const valores = [nome, preco, estoque, id_fornecedor];
-	const res = await pool.query(sql, valores);
-
-	console.log("Produto cadastrado com sucesso!");
-	console.table(res.rows);
-} catch (erro) {
-	console.error("Erro ao cadastrar produto:", erro.message);
-}
-}
-
-async function relatorioEstoque() {
-try {
-	const sql = 
-`SELECT 
-p.nome AS PRODUTOS,
-p.preco,
-p.estoque,
-f.razao_social AS fornecedor
-FROM produtos p
-INNER JOIN fornecedores f ON p.id_fornecedor = f.id_fornecedor
-`;
-
-	const res = await pool.query(sql);
-
-console.log("Relatório detalhado:");
-console.table(res.rows);
-} catch (erro) {
-console.error("Erro ao gerar relatório:", erro.message);
-}
-} */
