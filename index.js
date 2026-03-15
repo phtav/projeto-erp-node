@@ -1,4 +1,9 @@
 require('dotenv').config();
+const express = require('express');
+const app = express();
+const port = 3000;
+
+app.use(express.json());
 
 const { Pool } = require('pg');
 const pool = new Pool ({
@@ -9,8 +14,41 @@ password: process.env.DB_PASS,
 port: process.env.DB_PORT,
 });
 
+app.get('/', (req, res) => {
+ res.send('API do ERP rodando com sucesso!');
+});
 
-async function inserirFornecedor(razao_social, CNPJ, email) {
+let produtos = [];
+
+
+app.post('/produtos', (req, res) => {
+ const {nome, preco, estoque} = req.body;
+
+ const novoProduto = {
+ id: produtos.length + 1,
+ nome,
+ preco,
+ estoque
+};
+
+produtos.push(novoProduto);
+console.log('Produto cadastrado:', novoProduto);
+
+res.status(201).json({
+ mensagem: 'Produto cadastrado com sucesso!',
+ produto: novoProduto
+ });
+});
+
+app.get('/produtos', (req, res) => {
+ res.json(produtos);
+});
+
+app.listen(port, () => {
+ console.log(`Servidor rodando em http://localhost:${port}`);
+});
+
+/*async function inserirFornecedor(razao_social, CNPJ, email) {
 try {
 	const sql = "INSERT INTO fornecedores (razao_social, CNPJ, email) VALUES ($1, $2, $3) RETURNING *";
 	const valores = [razao_social, CNPJ, email];
@@ -54,6 +92,4 @@ console.table(res.rows);
 } catch (erro) {
 console.error("Erro ao gerar relatório:", erro.message);
 }
-}
-
-relatorioEstoque();
+} */
