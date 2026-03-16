@@ -14,6 +14,9 @@ password: process.env.DB_PASS,
 port: process.env.DB_PORT,
 });
 
+const cors = require('cors');
+app.use(cors());
+
 app.post('/produtos', async(req, res) => {
 
 	const { nome, preco, estoque, id_fornecedor } = req.body;
