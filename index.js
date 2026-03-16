@@ -56,6 +56,31 @@ try {
 }
 });
 
+app.get('/relatorio', async(req, res) => {
+	try {
+		const sql = `SELECT p.nome AS produtos,
+		p.preco,
+		p.estoque,
+		f.razao_social AS fornecedores
+		FROM produtos p
+		INNER JOIN fornecedores f ON p.id_fornecedor = f.id_fornecedor
+		ORDER BY p.nome ASC;`
+
+		const resp = await pool.query(sql);
+
+		console.log(`Relatorio gerado: ${resp.rowCount} produtos encontrados`);
+
+		res.status(200).json(resp.rows);
+		
+	} catch (erro) {
+		console.error('Falha em encontrar produto no banco', erro.message);
+		res.status(500).json({
+			erro: 'Erro ao buscar no banco de dados',
+			detalhes: erro.message
+		})
+	}
+})
+
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });
