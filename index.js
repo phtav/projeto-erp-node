@@ -81,6 +81,95 @@ app.get('/relatorio', async(req, res) => {
 	}
 })
 
+app.delete('/produtos/:id', async(req, res) => {
+	const {id} = req.params;
+
+	try{
+		const sql = `DELETE FROM produtos WHERE id_produto = $1 RETURNING *;`;
+		const valores = [id];
+		const resp = await pool.query(sql, valores);
+
+		if(resp.rowCount === 0) {
+			return res.status(404).json({erro: 'Nao foi possivel encontrar o produto pelo ID'});
+		}
+
+		console.log(`Produto com ID ${id} removido com sucesso!`);
+
+		res.status(200).json({
+			mensagem:'Produto deletado com sucesso!',
+			produtoRemovido: resp.rows[0]
+		});
+		
+	} catch (erro) {
+		console.error('Erro ao deletar!', erro.message);
+		res.status(500).json({
+			mensagem: 'Processo falhou!',
+			Erro: erro.message
+		});
+	}
+})
+
+app.put('/produtos/:id', async (req, res) => {
+	const {id} = req.params;
+	const {preco, estoque} = req.body;
+
+	try {
+		const sql = `UPDATE produtos SET preco = $1, estoque = $2 WHERE id_produto = $3 RETURNING *;`;
+		const valores = [preco, estoque, id];
+
+		const resp = await pool.query(sql, valores);
+
+		if(resp.rowCount === 0) {
+			return res.status(404).json({erro: 'Produto não encontrado.'});
+		}
+		
+		console.log(`Preço atualizado para o ID{id}`);
+		res.json(resp.rows[0]);
+	} catch (erro) {
+		res.status(404).json({erro: erro.message});
+	}
+})
+
+app.get('/produtos/busca', async (req, res) => {
+	const {nome} = req.query;
+
+	try {
+		const sql = `SELECT * FROM produtos WHERE nome ILIKE $1;`;
+		const busca = `%${nome}%`;
+		const resp = await pool.query(sql, [busca]);
+
+		res.json(resp.rows);
+		console.log(`Itens encontrados com "${nome}": ${resp.rowCount}`);
+
+	} catch (erro) {
+		res.status(500).json({erro: erro.message});
+	}
+});
+
+app.patch('/produtos/estoque/:id', async (req, res) => {
+    const { id } = req.params;
+    const { estoque } = req.body;
+
+    try {
+        const sql = `UPDATE produtos SET estoque = $1 WHERE id_produto = $2 RETURNING *;`;
+        const valores = [estoque, id];
+        const resp = await pool.query(sql, valores);
+
+        if (resp.rowCount === 0) { 
+            return res.status(404).json({ mensagem: 'Falha ao encontrar produto' });
+        }
+
+        res.status(200).json({ 
+            mensagem: `Valor alterado para o ID ${id}`, 
+            produto: resp.rows[0] 
+        });
+
+    } catch (erro) { 
+        console.error(erro);
+        res.status(500).json({ erro: 'Erro interno no servidor' });
+    }
+}); 
+
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });
