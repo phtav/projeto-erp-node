@@ -8,6 +8,16 @@ import { Boxes } from 'lucide-react';
 
 function App() {
   const [produtos, setProdutos] = useState([]);
+  const [clientes, setClientes] = useState([]);
+
+  const buscarClientes = async () => {
+    try {
+      const resp = await axios.get('http://localhost:3000/clientes');
+      setClientes(resp.data);
+    } catch (erro) {
+      console.error('Erro ao buscar dados', erro.message);
+    }
+  }
 
   const buscarProdutos = async () => {
     try {
@@ -18,8 +28,18 @@ function App() {
     }
   };
 
+  const estoqueBaixo = async () => {
+    try{
+      const resp = await axios.get('http://localhost:3000/produtos/estoque-baixo');
+      setProdutos(resp.data);
+    } catch (erro) {
+      console.error('Erro ao buscar dados:', erro.message);
+    }
+  };
+
   useEffect(() => {
     buscarProdutos();
+    buscarClientes();
   }, []);
 
   return (
@@ -33,6 +53,19 @@ function App() {
 </header>
 
       <nav>
+
+      <div style={{ padding: '20px', display: 'flex', gap: '10px' }}>
+        <button onClick={buscarProdutos} style={{ cursor: 'pointer' }}>
+          📦 Ver Todos
+        </button>
+        <button 
+          onClick={estoqueBaixo} 
+          style={{ backgroundColor: '#ff4d4d', color: 'white', cursor: 'pointer' }}
+        >
+          ⚠️ Estoque Baixo
+        </button>
+      </div>
+
         <ul>
           <li>Painel</li>
           <li>Produtos</li>
@@ -63,6 +96,29 @@ function App() {
               <button>🗑️</button>
             </td>
           </tr>
+          ))}
+        </tbody>
+      </table>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>CPF</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {clientes.map((c) => (
+            <tr key = {c.id_cliente}>
+              <td>{c.id_cliente}</td>
+              <td>{c.nome}</td>
+              <td>{c.cpf}</td>
+              <td>
+              <button>📝</button>
+              <button>🗑️</button>
+            </td>
+            </tr>
           ))}
         </tbody>
       </table>

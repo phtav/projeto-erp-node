@@ -171,7 +171,39 @@ app.patch('/produtos/estoque/:id', async (req, res) => {
         console.error(erro);
         res.status(500).json({ erro: 'Erro interno no servidor' });
     }
-}); 
+});
+
+app.get('/clientes', async (req, res) => {
+	try{
+		const sql = `SELECT * FROM clientes ORDER BY id_cliente ASC`;
+		const resp = await pool.query(sql);
+
+		res.json(resp.rows);
+	} catch (erro) {
+		console.error('Falha ao gerar relatório de clientes');
+		res.status(500).json({ erro: 'Erro interno no servidor',
+			mensagem: erro.message
+		 });
+	}
+})
+
+app.get('/produtos/estoque-baixo', async (req, res) => {
+	try {
+		const sql = `SELECT p.nome,
+		p.preco,
+		p.estoque,
+		f.razao_social AS fornecedor
+		FROM produtos p
+		INNER JOIN fornecedores f ON p.id_fornecedor = f.id_fornecedor
+		WHERE estoque < 5`;
+		const resp = await pool.query(sql);
+
+		res.json(resp.rows);
+	} catch (erro) {
+		console.error('Falha ao acessar o banco de dados');
+		res.status(500).json({ erro: 'Erro interno', mensagem: erro.message});
+	}
+})
 
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
