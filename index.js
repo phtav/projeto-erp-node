@@ -43,20 +43,24 @@ app.post('/produtos', async(req, res) => {
 	}
 })
 
-app.get('/produtos', async(req, res) => {
-
-try {
-	const sql = 'SELECT * FROM produtos ORDER BY id_produto ASC;';
-	const resp = await pool.query(sql);
-	res.status(200).json(resp.rows);
-	console.log(`Consulta realizada: ${resp.rowCount} produtos encontrados.`);
-} catch (erro) {
-	console.error("Erro ao buscar no banco de dados:", erro.message);
-	res.status(500).json({
-	erro: 'Erro ao buscar produtos no banco de dados',
-	detalhes: erro.message
-});
-}
+app.get('/produtos', async (req, res) => {
+    try {
+        const sql = `
+            SELECT 
+                p.id_produto, 
+                p.nome, 
+                p.preco, 
+                p.estoque, 
+                f.razao_Social AS fornecedor 
+            FROM produtos p
+            LEFT JOIN fornecedores f ON p.id_fornecedor = f.id_fornecedor
+            ORDER BY p.id_produto ASC;
+        `;
+        const resp = await pool.query(sql);
+        res.json(resp.rows);
+    } catch (erro) {
+        res.status(500).json({ erro: erro.message });
+    }
 });
 
 app.get('/relatorio', async(req, res) => {
@@ -202,6 +206,25 @@ app.get('/produtos/estoque-baixo', async (req, res) => {
 	} catch (erro) {
 		console.error('Falha ao acessar o banco de dados');
 		res.status(500).json({ erro: 'Erro interno', mensagem: erro.message});
+	}
+})
+
+app.delete('/produtos/remove/:id', async (req, res) => {
+	const {id} = req.params;
+
+	try {
+		const sql = `DELETE FROM produtos WHERE id_produto = $1 RETURNING *;`;
+		const resp = await pool.query(sql, [id]);
+
+		if(resp.rowCount === 0) {
+			return res.status(404).json({mensagem: 'ID não encontrado pra ser deletado!'});
+		}
+
+		res.status(200).json({mensagem: 'Produto deletado com sucesso!'});
+	} catch (erro) {
+		res.status(500).json({mensagem: 'Erro ao deletar produto!',
+			erro: erro.message
+		})
 	}
 })
 
